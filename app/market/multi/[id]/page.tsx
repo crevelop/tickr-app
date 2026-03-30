@@ -1,0 +1,143 @@
+'use client';
+
+import { use, useState, useEffect } from 'react';
+import { useMarketGroupDetail } from '@/features/market-groups/hooks/useMarketGroupDetail';
+import { useGroupMarkets } from '@/features/market-groups/hooks/useGroupMarkets';
+import { MarketGroupDetailHeader } from '@/features/market-groups/components/MarketGroupDetailHeader';
+import { GroupOutcomesList } from '@/features/market-groups/components/GroupOutcomesList';
+import { MarketGroupDetailSkeleton } from '@/features/market-groups/components/MarketGroupDetailSkeleton';
+import { MarketGroupManagementPanel } from '@/features/market-groups/components/MarketGroupManagementPanel';
+import { OrderbookPanel } from '@/features/orderbook/components/OrderbookPanel';
+import { UnifiedTradingPanel } from '@/features/trading/components/UnifiedTradingPanel';
+import { UserPositionsPanel } from '@/features/trading/components/UserPositionsPanel';
+import { UserOrdersPanel } from '@/features/trading/components/UserOrdersPanel';
+import { MatchOrdersButton } from '@/features/trading/components/MatchOrdersButton';
+import { ResolutionPanel } from '@/features/resolution/components/ResolutionPanel';
+import { ResolvedOutcomeCard } from '@/features/resolution/components/ResolvedOutcomeCard';
+import { RedeemPanel } from '@/features/resolution/components/RedeemPanel';
+import { RecentTradesPanel } from '@/features/market-detail/components/RecentTradesPanel';
+import { TopHoldersPanel } from '@/features/market-holders';
+
+export default function MarketGroupDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
+  const { data: group, isLoading: groupLoading, error } = useMarketGroupDetail(id);
+  const { data: markets, isLoading: marketsLoading } = useGroupMarkets(id);
+  const [selectedMarketId, setSelectedMarketId] = useState<string | null>(null);
+
+  // Auto-select first active (non-placeholder) market when data loads
+  useEffect(() => {
+    if (markets && markets.length > 0 && !selectedMarketId) {
+      const firstActive = markets.find((m) => !m.isPlaceholder && m.status === 'Active');
+      if (firstActive) {
+        setSelectedMarketId(firstActive.marketId);
+      } else {
+        setSelectedMarketId(markets[0].marketId);
+      }
+    }
+  }, [markets, selectedMarketId]);
+
+  if (groupLoading || marketsLoading) {
+    return <MarketGroupDetailSkeleton />;
+  }
+
+  if (error || !group) {
+    return (
+      <section className="flex flex-col gap-6 pt-4 pb-8 md:pt-6 md:pb-10">
+        <div className="text-center py-12">
+          <p className="text-default-500">
+            {error ? 'Failed to load market group' : 'Market group not found'}
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  const selectedMarket = markets?.find(
+    (m) => m.marketId === selectedMarketId,
+  );
+
+  return (
+    <section className="flex flex-col gap-6 pt-4 pb-8 md:pt-6 md:pb-10">
+      <MarketGroupDetailHeader group={group} />
+
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_338px] gap-4 items-start">
+        {/* Left column */}
+        <div className="flex flex-col gap-4">
+          <GroupOutcomesList
+            markets={markets || []}
+            selectedMarketId={selectedMarketId}
+            onSelectMarket={setSelectedMarketId}
+          />
+
+          {group.status !== 'Draft' && selectedMarket && (
+            <>
+              <OrderbookPanel
+                marketId={selectedMarket.marketId}
+                tickSize={selectedMarket.tickSize}
+                outcomes={selectedMarket.outcomes}
+              />
+              <MatchOrdersButton marketId={selectedMarket.marketId} tickSize={selectedMarket.tickSize} />
+              <UserPositionsPanel
+                marketId={selectedMarket.marketId}
+                outcomes={selectedMarket.outcomes}
+                yesPrice={selectedMarket.yesPrice}
+                noPrice={selectedMarket.noPrice}
+              />
+              <UserOrdersPanel
+                marketId={selectedMarket.marketId}
+                outcomes={selectedMarket.outcomes}
+                tickSize={selectedMarket.tickSize}
+              />
+              <RecentTradesPanel
+                marketId={selectedMarket.marketId}
+                outcomes={selectedMarket.outcomes}
+                tickSize={selectedMarket.tickSize}
+              />
+              <TopHoldersPanel
+                marketId={selectedMarket.marketId}
+                outcomes={selectedMarket.outcomes}
+              />
+            </>
+          )}
+        </div>
+
+        {/* Right column (sticky) */}
+        <div className="flex flex-col gap-4 md:sticky md:top-4">
+          {group.status !== 'Draft' && selectedMarket && (
+            <>
+              {selectedMarket.status === 'Resolved' ? (
+                <ResolvedOutcomeCard
+                  marketId={selectedMarket.marketId}
+                  outcomes={selectedMarket.outcomes}
+                />
+              ) : (
+                <UnifiedTradingPanel
+                  marketId={selectedMarket.marketId}
+                  outcomes={selectedMarket.outcomes}
+                  tickSize={selectedMarket.tickSize}
+                />
+              )}
+              {selectedMarket.status === 'Resolved' ? (
+                <RedeemPanel
+                  marketId={selectedMarket.marketId}
+                  outcomes={selectedMarket.outcomes}
+                  standalone
+                />
+              ) : (
+                <ResolutionPanel
+                  marketId={selectedMarket.marketId}
+                  outcomes={selectedMarket.outcomes}
+                />
+              )}
+            </>
+          )}
+          <MarketGroupManagementPanel groupId={id} group={group} />
+        </div>
+      </div>
+    </section>
+  );
+}
