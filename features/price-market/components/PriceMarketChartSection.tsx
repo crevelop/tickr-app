@@ -12,7 +12,6 @@ import { usePriceChartData } from '@/features/price-chart/hooks/usePriceChartDat
 import { TIMEFRAMES, DEFAULT_TIMEFRAME } from '@/features/price-chart/lib/timeframes';
 import type { Timeframe } from '@/features/price-chart/lib/timeframes';
 import { PYTH_FEED_MAP } from '../constants/pythFeeds';
-import { formatPythPrice } from '../lib/format';
 import { usePythPriceHistory } from '../hooks/usePythPriceHistory';
 import { usePythLivePrice } from '../hooks/usePythLivePrice';
 import { PriceInfoHeader } from './PriceInfoHeader';
@@ -39,11 +38,6 @@ export function PriceMarketChartSection({
   // Feed metadata
   const feed = PYTH_FEED_MAP.get(priceMarketData.feedId);
   const feedSymbol = feed?.symbol;
-  const strikePriceFormatted = formatPythPrice(
-    priceMarketData.strikePrice,
-    priceMarketData.priceExpo,
-  );
-
   // Live Pyth price (always active for the header)
   const { data: livePrice, isLoading: livePriceLoading } = usePythLivePrice(
     priceMarketData.feedId,
@@ -85,6 +79,10 @@ export function PriceMarketChartSection({
     (chartResult.data.length === 0 && fallbackPrice === undefined);
 
   const isResolved = priceMarketData.resolved;
+  const effectiveTab = isResolved ? 'probability' : activeTab;
+  const finalPriceNum = isResolved
+    ? Number(priceMarketData.finalPrice) * Math.pow(10, priceMarketData.priceExpo)
+    : undefined;
 
   return (
     <Card>
@@ -92,10 +90,12 @@ export function PriceMarketChartSection({
       <CardHeader className="flex-col gap-3 pb-0">
         <div className="flex items-start justify-between w-full">
           <PriceInfoHeader
-            strikePrice={strikePriceFormatted}
+            strikePriceNum={strikeNum}
             currentPrice={livePrice?.price}
             isLoading={livePriceLoading}
             priceDirection={priceDirection}
+            finalPrice={finalPriceNum}
+            resolved={isResolved}
           />
           {!isResolved && <CountdownTimer closeTime={priceMarketData.closeTime} />}
         </div>
@@ -104,7 +104,7 @@ export function PriceMarketChartSection({
         <div className="flex items-center justify-between w-full">
           {/* Timeframe selector — only for probability tab */}
           <div className="flex items-center gap-1">
-            {activeTab === 'probability' ? (
+            {effectiveTab === 'probability' ? (
               TIMEFRAMES.map((tf) => (
                 <Button
                   key={tf.key}
@@ -124,12 +124,14 @@ export function PriceMarketChartSection({
             )}
           </div>
 
-          <ChartTabSwitcher activeTab={activeTab} onTabChange={setActiveTab} />
+          {!isResolved && (
+            <ChartTabSwitcher activeTab={activeTab} onTabChange={setActiveTab} />
+          )}
         </div>
       </CardHeader>
 
       <CardBody className="pt-2">
-        {activeTab === 'probability' ? (
+        {effectiveTab === 'probability' ? (
           // Probability chart (existing behavior)
           chartLoading ? (
             <PriceChartSkeleton />
