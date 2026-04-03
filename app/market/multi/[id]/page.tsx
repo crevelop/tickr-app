@@ -120,8 +120,8 @@ export default function MarketGroupDetailPage({
             <>
               {selectedMarket.status === 'Resolved' ? (
                 <ResolvedOutcomeCard
-                  marketId={selectedMarket.marketId}
                   outcomes={selectedMarket.outcomes}
+                  resolvedOutcome={selectedMarket.resolvedOutcome}
                 />
               ) : (
                 <UnifiedTradingPanel

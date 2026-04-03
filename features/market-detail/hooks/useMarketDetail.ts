@@ -25,6 +25,7 @@ export interface MarketDetail {
   yesPrice: number;
   noPrice: number;
   volumeFormatted: string;
+  resolvedOutcome: number | null;
   metadataURI: string;
   createdAt: string;
   creator: string;
@@ -84,6 +85,7 @@ export function useMarketDetail(marketId: string) {
         yesPrice,
         noPrice,
         volumeFormatted: formatVolume(m.totalVolume || '0', 6),
+        resolvedOutcome: m.resolvedOutcome != null ? parseInt(m.resolvedOutcome) : null,
         metadataURI: m.metadataURI || '',
         createdAt: m.createdAt || '0',
         creator: m.creator?.id || m.creator?.address || '',

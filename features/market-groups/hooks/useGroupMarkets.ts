@@ -18,6 +18,7 @@ export interface GroupMarketDetail {
   yesPrice: number;
   noPrice: number;
   lastPriceTick_0: string;
+  resolvedOutcome: number | null;
   description: string;
   totalVolume: string;
   volumeFormatted: string;
@@ -59,6 +60,7 @@ export function useGroupMarkets(groupId: string) {
           yesPrice,
           noPrice,
           lastPriceTick_0: m.lastPriceTick_0 || '0',
+          resolvedOutcome: m.resolvedOutcome != null ? parseInt(m.resolvedOutcome) : null,
           description,
           totalVolume: m.totalVolume || '0',
           volumeFormatted: formatVolume(m.totalVolume || '0'),

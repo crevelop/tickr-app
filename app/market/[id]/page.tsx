@@ -50,6 +50,10 @@ export default function MarketDetailPage({
 
   const isPriceMarket = priceMarket?.isPriceMarket && priceMarket.data;
   const isResolved = market.status === 'Resolved';
+  const winningOutcome =
+    market.resolvedOutcome != null
+      ? market.resolvedOutcome === 0 ? 'YES' : 'NO'
+      : undefined;
 
   return (
     <section className="flex flex-col gap-6 pt-4 pb-8 md:pt-6 md:pb-10">
@@ -110,8 +114,8 @@ export default function MarketDetailPage({
         <div className="flex flex-col gap-4">
           {isResolved ? (
             <ResolvedOutcomeCard
-              marketId={market.marketId}
               outcomes={market.outcomes}
+              resolvedOutcome={market.resolvedOutcome}
             />
           ) : (
             <UnifiedTradingPanel
@@ -130,6 +134,7 @@ export default function MarketDetailPage({
             <RedeemPanel
               marketId={market.marketId}
               outcomes={market.outcomes}
+              winningOutcome={winningOutcome}
               standalone
             />
           ) : isPriceMarket ? (
