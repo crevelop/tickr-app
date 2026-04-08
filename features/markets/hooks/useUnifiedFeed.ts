@@ -5,7 +5,7 @@ import { useOddMakiClient } from '@/lib/oddmaki/hooks';
 import { getVenueId } from '@/config/venue.config';
 import { parseAncillaryData } from '@oddmaki-protocol/sdk';
 import { queryKeys } from '@/lib/oddmaki/queryKeys';
-import { tickToPercentage, formatVolume } from '../utils/formatting';
+import { calculateMarketPrices, formatVolume } from '../utils/formatting';
 import type { Market, FormattedMarket, UnifiedFeedItem } from '../types';
 import type {
   FormattedMarketGroup,
@@ -18,8 +18,7 @@ import type {
  * (same logic as useMarkets.ts formatMarket)
  */
 function formatStandaloneMarket(market: Market): FormattedMarket {
-  const yesPrice = tickToPercentage(market.lastPriceTick_0 || 0, market.tickSize || 0);
-  const noPrice = tickToPercentage(market.lastPriceTick_1 || 0, market.tickSize || 0);
+  const { yesPrice, noPrice } = calculateMarketPrices(market);
   const { title } = parseAncillaryData(market.question);
 
   return {

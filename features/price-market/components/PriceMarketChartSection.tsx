@@ -60,7 +60,6 @@ export function PriceMarketChartSection({
     marketId,
     tickSize,
     timeframe,
-    0,
     fallbackPrice,
   );
 

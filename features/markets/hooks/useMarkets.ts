@@ -5,14 +5,13 @@ import { useOddMakiClient } from '@/lib/oddmaki/hooks';
 import { getVenueId } from '@/config/venue.config';
 import { parseAncillaryData } from '@oddmaki-protocol/sdk';
 import type { Market, FormattedMarket } from '../types';
-import { tickToPercentage, formatVolume } from '../utils/formatting';
+import { calculateMarketPrices, formatVolume } from '../utils/formatting';
 
 /**
  * Transform raw market data to formatted market
  */
 function formatMarket(market: Market): FormattedMarket {
-  const yesPrice = tickToPercentage(market.lastPriceTick_0 || 0, market.tickSize || 0);
-  const noPrice = tickToPercentage(market.lastPriceTick_1 || 0, market.tickSize || 0);
+  const { yesPrice, noPrice } = calculateMarketPrices(market);
 
   // Parse question to get title
   const { title } = parseAncillaryData(market.question);

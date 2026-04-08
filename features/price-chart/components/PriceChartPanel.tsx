@@ -36,7 +36,6 @@ export function PriceChartPanel({
     marketId,
     tickSize,
     timeframe,
-    0,
     fallbackPrice,
   );
 

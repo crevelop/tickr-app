@@ -28,6 +28,15 @@ export interface Market {
   lastPriceTick_0: string;
   lastPriceTick_1: string;
   lastTradeTimestamp: string;
+  lastTradeTimestamp_0?: string;
+  lastTradeTimestamp_1?: string;
+
+  // Top of book for mark price calculation
+  topOfBook?: Array<{
+    outcome: string;
+    side: string;
+    topTick: string;
+  }>;
 
   // Market parameters
   tickSize: string;

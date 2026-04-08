@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useOddMakiClient } from '@/lib/oddmaki/hooks';
 import { queryKeys } from '@/lib/oddmaki/queryKeys';
-import { parseAncillaryData } from '@oddmaki-protocol/sdk';
+import { parseAncillaryData, calculateChancePercent } from '@oddmaki-protocol/sdk';
 
 export interface MarketDetail {
   // From subgraph
@@ -31,14 +31,6 @@ export interface MarketDetail {
   creator: string;
 }
 
-function tickToPercentage(tick: string | number, tickSize: string | number): number {
-  const tickNum = typeof tick === 'string' ? parseFloat(tick) : tick;
-  const tickSizeNum = typeof tickSize === 'string' ? parseFloat(tickSize) : tickSize;
-  if (tickNum === 0 || tickSizeNum === 0) return 0;
-  const price = (tickNum * tickSizeNum) / 1e18;
-  return parseFloat((price * 100).toFixed(2));
-}
-
 function formatVolume(volume: string, decimals: number = 6): string {
   const vol = parseFloat(volume) / Math.pow(10, decimals);
   if (vol === 0) return '$0';
@@ -61,10 +53,8 @@ export function useMarketDetail(marketId: string) {
 
       const m = market as any;
       const { title, description } = parseAncillaryData(m.question || '');
-      const yesPrice = tickToPercentage(m.lastPriceTick_0 || 0, m.tickSize || 0);
-      const noPriceRaw = tickToPercentage(m.lastPriceTick_1 || 0, m.tickSize || 0);
-      // Binary market: NO = 100 - YES when no direct NO trades have occurred
-      const noPrice = noPriceRaw > 0 ? noPriceRaw : (yesPrice > 0 ? parseFloat((100 - yesPrice).toFixed(2)) : 0);
+      const yesPrice = calculateChancePercent(m);
+      const noPrice = parseFloat((100 - yesPrice).toFixed(2));
 
       return {
         marketId: m.marketId,

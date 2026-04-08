@@ -24,7 +24,6 @@ export function usePriceChartData(
   marketId: string,
   tickSize: string,
   timeframe: Timeframe,
-  outcomeIndex: number = 0,
   fallbackPrice?: number,
 ) {
   const client = useOddMakiClient();
@@ -42,7 +41,7 @@ export function usePriceChartData(
       })) as any;
 
       const trades = result.trades || [];
-      const points = tradesToChartData(trades, tickSize, outcomeIndex);
+      const points = tradesToChartData(trades, tickSize);
       const deduplicated = deduplicateByTimestamp(points);
       const downsampled = downsampleLTTB(deduplicated, CHART_MAX_POINTS);
 

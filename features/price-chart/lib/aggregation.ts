@@ -5,22 +5,25 @@ export interface ChartDataPoint {
 
 /**
  * Convert raw trade data from subgraph into chart data points.
- * Filters by outcome index and converts tick to decimal price.
+ * Includes both outcomes: Yes trades use price directly, No trades are
+ * converted to Yes-equivalent via complement (1 - noPrice) so the chart
+ * shows a continuous probability line reflecting all market activity.
  */
 export function tradesToChartData(
   trades: Array<{ tick: string; timestamp: string; outcome: string }>,
   tickSize: string,
-  outcomeIndex: number,
 ): ChartDataPoint[] {
   const tickSizeNum = parseFloat(tickSize);
   if (tickSizeNum === 0) return [];
 
-  return trades
-    .filter((t) => parseInt(t.outcome) === outcomeIndex)
-    .map((t) => ({
+  return trades.map((t) => {
+    const rawPrice = (parseFloat(t.tick) * tickSizeNum) / 1e18;
+    const isYes = parseInt(t.outcome) === 0;
+    return {
       time: parseInt(t.timestamp),
-      value: (parseFloat(t.tick) * tickSizeNum) / 1e18,
-    }));
+      value: isYes ? rawPrice : 1 - rawPrice,
+    };
+  });
 }
 
 /**
