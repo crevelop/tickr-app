@@ -8,6 +8,7 @@ import { venueConfig } from '@/config/venue.config';
 import { fontSans } from '@/config/fonts';
 import { Navbar } from '@/components/navbar';
 import { CategoryNav } from '@/components/category-nav';
+import { NavigationProgress } from '@/components/navigation-progress';
 
 export const metadata: Metadata = {
   title: {
@@ -42,6 +43,7 @@ export default function RootLayout({
         )}
       >
         <Providers themeProps={{ attribute: 'class', defaultTheme: 'dark' }}>
+          <NavigationProgress />
           <div className="relative flex flex-col h-screen">
             <Navbar />
             <CategoryNav />
