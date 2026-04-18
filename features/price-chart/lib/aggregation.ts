@@ -129,13 +129,24 @@ export function padToTimeWindow(
   const duration = windowEnd - windowStart;
   const step = Math.max(Math.floor(duration / 100), 60);
 
-  const leadValue = data.length > 0 ? data[0].value : fallbackPrice!;
-  const trailValue = data.length > 0 ? data[data.length - 1].value : fallbackPrice!;
-
   const result: ChartDataPoint[] = [];
 
+  if (data.length === 0) {
+    const flatValue = fallbackPrice!;
+    for (let t = windowStart; t < windowEnd; t += step) {
+      result.push({ time: t, value: flatValue });
+    }
+    if (result.length === 0 || result[result.length - 1].time < windowEnd) {
+      result.push({ time: windowEnd, value: flatValue });
+    }
+    return result;
+  }
+
+  const leadValue = data[0].value;
+  const trailValue = data[data.length - 1].value;
+
   // Leading fill: from windowStart up to (but not including) first real point
-  const firstDataTime = data.length > 0 ? data[0].time : windowEnd;
+  const firstDataTime = data[0].time;
   for (let t = windowStart; t < firstDataTime; t += step) {
     result.push({ time: t, value: leadValue });
   }
@@ -146,13 +157,13 @@ export function padToTimeWindow(
   }
 
   // Trailing fill: from after last real point to windowEnd
-  const lastDataTime = data.length > 0 ? data[data.length - 1].time : windowStart;
+  const lastDataTime = data[data.length - 1].time;
   for (let t = lastDataTime + step; t < windowEnd; t += step) {
     result.push({ time: t, value: trailValue });
   }
 
   // Always include the exact window end
-  if (result.length === 0 || result[result.length - 1].time < windowEnd) {
+  if (result[result.length - 1].time < windowEnd) {
     result.push({ time: windowEnd, value: trailValue });
   }
 
