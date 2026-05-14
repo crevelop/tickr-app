@@ -2,35 +2,76 @@ import type { FormattedPriceMarketSeries } from "../types";
 
 import { calculateMarketPrices } from "@/features/markets/utils/formatting";
 
-const ASSET_DISPLAY: Record<string, string> = {
-  btc: "BTC",
-  eth: "ETH",
-  sol: "SOL",
-  xrp: "XRP",
-  doge: "DOGE",
-  hype: "HYPE",
-  bnb: "BNB",
-};
-
 const KIND_DISPLAY: Record<string, string> = {
   updown: "Up or Down",
   strike: "Strike",
 };
 
+// Interval aliases — anything not in here renders the raw segment ("5m", "15m", "1h", ...).
+const INTERVAL_DISPLAY: Record<string, string> = {
+  "24h": "Daily",
+  "1440m": "Daily",
+  "1d": "Daily",
+  "7d": "Weekly",
+  "1w": "Weekly",
+};
+
+/**
+ * Parse a seriesKey of the form "<asset>-<kind>-<interval>" into its parts.
+ *
+ * The asset segment may itself contain hyphens when the bot slugifies a quoted
+ * symbol ("DOGE/USD" → "doge-usd"), so we treat the last segment as the
+ * interval, the second-to-last as the kind, and join everything before as the
+ * asset.
+ */
+export function parseSeriesKey(seriesKey: string): {
+  asset: string;
+  kind: string;
+  interval: string;
+} {
+  const parts = seriesKey.split("-").filter(Boolean);
+
+  if (parts.length < 3) {
+    return { asset: seriesKey, kind: "", interval: "" };
+  }
+
+  const interval = parts[parts.length - 1];
+  const kind = parts[parts.length - 2];
+  const asset = parts.slice(0, parts.length - 2).join("-");
+
+  return { asset, kind, interval };
+}
+
+/**
+ * Render a slugified asset segment for display. Hyphens are interpreted as
+ * pair separators (`doge-usd` → `DOGE/USD`); a bare asset is uppercased.
+ */
 function displayAsset(asset: string): string {
-  return ASSET_DISPLAY[asset] ?? asset.toUpperCase();
+  if (!asset) return "";
+  if (asset.includes("-")) {
+    return asset
+      .split("-")
+      .map((p) => p.toUpperCase())
+      .join("/");
+  }
+
+  return asset.toUpperCase();
 }
 
 function displayKind(kind: string): string {
   return KIND_DISPLAY[kind] ?? kind;
 }
 
-export function buildSeriesTitle(
-  asset: string,
-  kind: string,
-  interval: string,
-): string {
-  return `${displayAsset(asset)} ${displayKind(kind)} ${interval}`;
+function displayInterval(interval: string): string {
+  return INTERVAL_DISPLAY[interval] ?? interval;
+}
+
+export function buildSeriesTitle(seriesKey: string): string {
+  const { asset, kind, interval } = parseSeriesKey(seriesKey);
+  const left = [displayAsset(asset), displayKind(kind)].filter(Boolean).join(" ");
+  const right = displayInterval(interval);
+
+  return right ? `${left} — ${right}` : left;
 }
 
 export function formatPriceMarketSeries(raw: any): FormattedPriceMarketSeries {
@@ -61,7 +102,7 @@ export function formatPriceMarketSeries(raw: any): FormattedPriceMarketSeries {
     intervalSeconds: Number(raw.intervalSeconds ?? 0),
     status: raw.status,
     tags: raw.tags ?? [],
-    title: buildSeriesTitle(raw.asset, raw.kind, raw.interval),
+    title: buildSeriesTitle(raw.seriesKey ?? ""),
     createdAt: raw.createdAt ?? "0",
     updatedAt: raw.updatedAt ?? "0",
     currentMarketId: current?.id ?? null,
