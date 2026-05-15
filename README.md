@@ -4,32 +4,90 @@ A white-label prediction market frontend for the [OddMaki Protocol](https://gith
 
 OddMaki is a permissionless prediction market factory — anyone can launch a venue with custom rules for market creation, trading, fees, and access control. This starter gives you a production-ready frontend out of the box.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/oddmaki/oddmaki-venue-starter&env=NEXT_PUBLIC_VENUE_ID,NEXT_PUBLIC_GRAPH_API_KEY&envDescription=NEXT_PUBLIC_VENUE_ID%20is%20your%20on-chain%20venue%20ID%20%28required%20to%20boot%20past%20the%20setup%20modal%29.%20NEXT_PUBLIC_GRAPH_API_KEY%20is%20your%20The%20Graph%20gateway%20key%20%28required%20in%20production%3B%20leave%20blank%20to%20use%20the%20free%20Studio%20fallback%29.&envLink=https://github.com/oddmaki/oddmaki-venue-starter%23environment-variables)
+## Live Demo
+
+**[base-sepolia.demo.oddmaki.com](https://base-sepolia.demo.oddmaki.com/)** — a demo venue running on **Base Sepolia (testnet)** from this exact repo with default branding and no customizations. Use it to kick the tires on the trading UI, market creation, orderbook, and resolution flows before you fork. Grab free testnet ETH from the [Base faucets](https://docs.base.org/base-chain/network-information/network-faucets) and test USDC from [faucet.circle.com](https://faucet.circle.com) (pick "Base Sepolia") to place real-looking orders.
+
+## Deploy your own
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/oddmaki/oddmaki-venue-starter&env=NEXT_PUBLIC_VENUE_ID,NEXT_PUBLIC_CHAIN_ID&envDescription=NEXT_PUBLIC_VENUE_ID%20is%20your%20on-chain%20venue%20ID%20%28required%20to%20boot%20past%20the%20setup%20modal%29.%20NEXT_PUBLIC_CHAIN_ID%20is%208453%20for%20Base%20mainnet%20or%2084532%20for%20Base%20Sepolia%20%28testnet%29.&envLink=https://github.com/oddmaki/oddmaki-venue-starter%23environment-variables)
 
 One click forks the repo into your GitHub account and deploys it to Vercel.
+
+## Before You Start — Create a Venue
+
+This starter is a **frontend for an existing venue**. You need a `venueId` before the app will boot — without one, you'll just see a setup modal.
+
+Create your venue in the **[OddMaki App](https://app.oddmaki.com)** (recommended): connect your wallet → pick **Base mainnet** or **Base Sepolia** in the network switcher → **Venues → Create venue** → step through the wizard → copy the `venueId` from the success screen.
+
+→ Full walkthrough with screenshots: [Create a Venue](https://app.oddmaki.com/docs/quick-start/create-venue) in the OddMaki docs. Prefer the SDK or a direct contract call? Those paths are documented there too.
 
 ## Get the Code
 
 Forking is the recommended path — you keep your own GitHub copy, can pull starter updates with one click, and your `theme.config.json` and customizations live in your repo, not someone else's.
 
-- **Easiest** — click [**Deploy with Vercel**](https://vercel.com/new/clone?repository-url=https://github.com/oddmaki/oddmaki-venue-starter&env=NEXT_PUBLIC_VENUE_ID,NEXT_PUBLIC_GRAPH_API_KEY&envDescription=NEXT_PUBLIC_VENUE_ID%20is%20your%20on-chain%20venue%20ID%20%28required%20to%20boot%20past%20the%20setup%20modal%29.%20NEXT_PUBLIC_GRAPH_API_KEY%20is%20your%20The%20Graph%20gateway%20key%20%28required%20in%20production%3B%20leave%20blank%20to%20use%20the%20free%20Studio%20fallback%29.&envLink=https://github.com/oddmaki/oddmaki-venue-starter%23environment-variables) above (forks + deploys in one flow).
-- **CLI** — `gh repo fork oddmaki/oddmaki-venue-starter --clone && cd oddmaki-venue-starter`
-- **GitHub UI** — click **Fork** at the top of [the repo page](https://github.com/oddmaki/oddmaki-venue-starter), then `git clone` your fork.
-- **Disconnected copy** — if you don't want a link back to the starter, `git clone https://github.com/oddmaki/oddmaki-venue-starter.git` directly.
+Pick one of three flows below. All three give you the same code; they differ in whether deployment is one-click or manual.
 
-Forks stay connected to this repo, so pulling in starter updates is one click on GitHub's **Sync fork** button or:
+### Flow A — Deploy with Vercel (one click, recommended)
+
+The fastest path. Forks the repo into your GitHub account and deploys it to Vercel in the same flow, prompting only for `NEXT_PUBLIC_VENUE_ID` and `NEXT_PUBLIC_CHAIN_ID`.
+
+1. Make sure you have a [`venueId`](https://app.oddmaki.com) from the OddMaki App.
+2. Click the button at the top of this README (or [here](https://vercel.com/new/clone?repository-url=https://github.com/oddmaki/oddmaki-venue-starter&env=NEXT_PUBLIC_VENUE_ID,NEXT_PUBLIC_CHAIN_ID&envDescription=NEXT_PUBLIC_VENUE_ID%20is%20your%20on-chain%20venue%20ID%20%28required%20to%20boot%20past%20the%20setup%20modal%29.%20NEXT_PUBLIC_CHAIN_ID%20is%208453%20for%20Base%20mainnet%20or%2084532%20for%20Base%20Sepolia%20%28testnet%29.&envLink=https://github.com/oddmaki/oddmaki-venue-starter%23environment-variables)).
+3. Sign in to Vercel and GitHub, name your fork, paste in `NEXT_PUBLIC_VENUE_ID` and `NEXT_PUBLIC_CHAIN_ID` (`8453` mainnet or `84532` Sepolia), and click **Deploy**.
+4. Done — open the deployment URL.
+
+To run that fork locally afterwards: `git clone <your-fork-url> && cd oddmaki-venue-starter && pnpm install && cp .env.local.example .env.local && pnpm dev`.
+
+### Flow B — Fork first, then run locally (CLI)
+
+For operators who want to customize before deploying.
+
+```bash
+# 1. Fork + clone in one step (requires the GitHub CLI: https://cli.github.com)
+gh repo fork oddmaki/oddmaki-venue-starter --clone
+cd oddmaki-venue-starter
+
+# 2. Configure
+cp .env.local.example .env.local
+# Edit .env.local and set:
+#   NEXT_PUBLIC_VENUE_ID=<your venueId from the OddMaki App>
+#   NEXT_PUBLIC_CHAIN_ID=8453   # or 84532 for Base Sepolia
+
+# 3. Install and run
+pnpm install
+pnpm dev   # http://localhost:3000
+```
+
+Deploy your fork later via Vercel CLI (`vercel`) or by importing it into the Vercel dashboard.
+
+### Flow C — Fork in the GitHub UI
+
+If you don't have the `gh` CLI:
+
+1. Click **Fork** at the top of [the repo page](https://github.com/oddmaki/oddmaki-venue-starter).
+2. `git clone https://github.com/<your-username>/oddmaki-venue-starter.git && cd oddmaki-venue-starter`
+3. Continue from **step 2** of Flow B (configure → install → run).
+
+### Flow D — Disconnected copy (no upstream link)
+
+If you don't want a fork relationship with this repo (e.g. you're building something significantly different):
+
+```bash
+git clone https://github.com/oddmaki/oddmaki-venue-starter.git my-venue-app
+cd my-venue-app
+rm -rf .git && git init   # optional — fully disconnect
+```
+
+You give up one-click upstream syncing in exchange for full independence.
+
+### Keeping Up With Starter Updates (Flows A–C)
+
+Forks stay connected to this repo, so pulling in starter updates is one click on GitHub's **Sync fork** button, or from the command line:
 
 ```bash
 git remote add upstream https://github.com/oddmaki/oddmaki-venue-starter.git
 git fetch upstream && git merge upstream/main
-```
-
-## Quick Start (local)
-
-```bash
-pnpm install
-cp .env.local.example .env.local   # set your venue ID
-pnpm dev                            # http://localhost:3000
 ```
 
 ## Stack
@@ -61,17 +119,18 @@ Everything a venue operator needs to run a prediction market platform:
 
 ### Required for first run
 
-Set this and the app boots:
+Set these two and the app boots — this is what the **Deploy with Vercel** button asks for so you can evaluate the protocol with zero friction:
 
 | Variable | Description |
 |---|---|
 | `NEXT_PUBLIC_VENUE_ID` | Your venue ID on the OddMaki Protocol. Without it, the app shows a setup modal blocking everything else. |
+| `NEXT_PUBLIC_CHAIN_ID` | `8453` for Base mainnet or `84532` for Base Sepolia (testnet). Defaults to `8453` if unset; set it explicitly — especially when targeting Sepolia. |
 
 ### Required for production
 
 | Variable | Description |
 |---|---|
-| `NEXT_PUBLIC_GRAPH_API_KEY` | The Graph gateway API key. Optional locally — the SDK falls back to the hosted Studio endpoint. See [Subgraph data](#subgraph-data) below. |
+| `NEXT_PUBLIC_GRAPH_API_KEY` | The Graph gateway API key. Optional locally and for evaluation — the SDK falls back to the hosted Studio endpoint. Set it in production for the decentralized gateway. See [Subgraph data](#subgraph-data) below. |
 
 ### Conditionally required
 
@@ -86,7 +145,6 @@ Only needed if you opt into the corresponding feature:
 
 | Variable | Default | Description |
 |---|---|---|
-| `NEXT_PUBLIC_CHAIN_ID` | `8453` | `8453` (Base mainnet) or `84532` (Base Sepolia) |
 | `NEXT_PUBLIC_VENUE_NAME` | `"OddMaki Markets"` | Display name |
 | `NEXT_PUBLIC_AUTH_PROVIDER` | `rainbowkit` | `rainbowkit` or `privy` |
 | `NEXT_PUBLIC_WALLETCONNECT_ID` | _(unset)_ | WalletConnect / Reown project ID. Set it to enable mobile wallet support (WalletConnect QR) in the RainbowKit modal. Without it, only browser-extension wallets work. Get one free at [cloud.reown.com](https://cloud.reown.com). |
