@@ -15,7 +15,6 @@ import { EmptyState } from "./EmptyState";
 import { MarketStatusFilter } from "./MarketStatusFilter";
 
 import { MarketGroupCard } from "@/features/market-groups/components/MarketGroupCard";
-import { MarketGroupSkeleton } from "@/features/market-groups/components/MarketGroupSkeleton";
 import { PriceSeriesCard } from "@/features/price-market-series";
 import { CATEGORIES } from "@/config/tags.config";
 
@@ -89,11 +88,8 @@ export function MarketGrid() {
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {Array.from({ length: 4 }).map((_, i) => (
+        {Array.from({ length: 16 }).map((_, i) => (
           <MarketSkeleton key={`m-${i}`} />
-        ))}
-        {Array.from({ length: 2 }).map((_, i) => (
-          <MarketGroupSkeleton key={`g-${i}`} />
         ))}
       </div>
     );
