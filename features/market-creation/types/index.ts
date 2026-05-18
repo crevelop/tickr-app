@@ -259,6 +259,19 @@ export interface PriceMarketFormData {
   priceExpo: number;
   useStrikePrice: boolean;
   strikePrice: string;
+  /**
+   * When the market opens for the purposes of price comparison.
+   * - `immediate`: open price is captured at resolution from the VAA published
+   *   around tx-mine time. Sent to the contract as `openTime = 0`.
+   * - `scheduled`: open price is captured at resolution from the VAA published
+   *   at the user-supplied datetime. Sent to the contract as
+   *   `openTime = unix(openDatetime)`.
+   */
+  openMode: "immediate" | "scheduled";
+  /** datetime-local string in `openTimezone`, only used when `openMode === "scheduled"`. */
+  openDatetime: string;
+  /** Either "local" (auto-detected) or a tz id like "UTC". */
+  openTimezone: string;
   closeMode: "preset" | "custom";
   presetSeconds: number;
   customDatetime: string;
@@ -276,6 +289,9 @@ export const DEFAULT_PRICE_FORM: PriceMarketFormData = {
   priceExpo: -8,
   useStrikePrice: false,
   strikePrice: "",
+  openMode: "immediate",
+  openDatetime: "",
+  openTimezone: "local",
   closeMode: "preset",
   presetSeconds: 3600,
   customDatetime: "",

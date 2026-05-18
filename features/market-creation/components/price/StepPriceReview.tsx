@@ -9,6 +9,7 @@ interface StepPriceReviewProps {
   formData: PriceMarketFormData;
   resolvedTitle: string;
   resolvedDescription: string;
+  openDisplay: string | null;
   closeDisplay: string | null;
   outcomes: [string, string];
   creationFee: number;
@@ -24,6 +25,7 @@ export function StepPriceReview({
   formData,
   resolvedTitle,
   resolvedDescription,
+  openDisplay,
   closeDisplay,
   outcomes,
   creationFee,
@@ -52,6 +54,13 @@ export function StepPriceReview({
 
       <ReviewSection title="Trading & Schedule">
         <ReviewRow label="Outcomes" value={`${outcomes[0]} / ${outcomes[1]}`} />
+        <ReviewRow
+          label="Open time"
+          value={
+            openDisplay ||
+            (formData.openMode === "immediate" ? "Immediately" : "(not set)")
+          }
+        />
         <ReviewRow label="Close time" value={closeDisplay || "(not set)"} />
         <ReviewRow label="Tick size" value={`$${formData.tickSize}`} />
         <ReviewRow

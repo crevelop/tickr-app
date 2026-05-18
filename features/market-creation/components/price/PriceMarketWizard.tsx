@@ -28,7 +28,10 @@ interface PriceMarketWizardProps {
   onClose?: () => void;
 }
 
-const MIN_DURATION_SECONDS = 5 * 60;
+// Minimum lead before openTime must be in the future. Just enough that the
+// create tx has time to mine before openTime arrives — the protocol itself
+// only requires `openTime > block.timestamp` at tx-mine time.
+const MIN_SCHEDULED_LEAD_SECONDS = 30;
 
 function resolveTz(value: string): string {
   if (value === "local") {
@@ -94,26 +97,32 @@ function isValidStrike(form: PriceMarketFormData): boolean {
 function isStepValid(
   step: PriceWizardStep,
   form: PriceMarketFormData,
+  openTimeUnix: number | null,
   closeTimeUnix: number | null,
 ): boolean {
+  const now = Math.floor(Date.now() / 1000);
+  const openOk =
+    form.openMode === "immediate" ||
+    (openTimeUnix !== null && openTimeUnix - now >= MIN_SCHEDULED_LEAD_SECONDS);
+  const effectiveOpen =
+    form.openMode === "immediate" ? now : (openTimeUnix ?? now);
+  const closeOk = closeTimeUnix !== null && closeTimeUnix > effectiveOpen;
+
   switch (step) {
     case "feed":
       return (
         PYTH_FEED_ID_REGEX.test(form.pythFeedId.trim()) && isValidStrike(form)
       );
-    case "window": {
-      if (closeTimeUnix === null) return false;
-      const now = Math.floor(Date.now() / 1000);
-
-      return closeTimeUnix - now >= MIN_DURATION_SECONDS;
-    }
+    case "window":
+      return openOk && closeOk;
     case "meta":
       return true;
     case "review":
       return (
         PYTH_FEED_ID_REGEX.test(form.pythFeedId.trim()) &&
         isValidStrike(form) &&
-        closeTimeUnix !== null
+        openOk &&
+        closeOk
       );
   }
 }
@@ -155,11 +164,32 @@ export function PriceMarketWizard({
     () => resolveTz(formData.customTimezone),
     [formData.customTimezone],
   );
+  const openTz = useMemo(
+    () => resolveTz(formData.openTimezone),
+    [formData.openTimezone],
+  );
   const tzAbbr = useMemo(() => tzAbbreviation(effectiveTz), [effectiveTz]);
+  const openTzAbbr = useMemo(() => tzAbbreviation(openTz), [openTz]);
+
+  const openTimeUnix = useMemo<number | null>(() => {
+    if (formData.openMode === "immediate") return null;
+    if (!formData.openDatetime) return null;
+
+    return Math.floor(
+      parseDatetimeLocalInTz(formData.openDatetime, openTz) / 1000,
+    );
+  }, [formData.openMode, formData.openDatetime, openTz]);
 
   const closeTimeUnix = useMemo<number | null>(() => {
     if (formData.closeMode === "preset") {
-      return Math.floor(tick / 1000) + formData.presetSeconds;
+      // Preset duration is measured from the market's effective open time —
+      // either openTime (scheduled) or now (immediate).
+      const base =
+        formData.openMode === "scheduled" && openTimeUnix !== null
+          ? openTimeUnix
+          : Math.floor(tick / 1000);
+
+      return base + formData.presetSeconds;
     }
     if (!formData.customDatetime) return null;
 
@@ -167,12 +197,30 @@ export function PriceMarketWizard({
       parseDatetimeLocalInTz(formData.customDatetime, effectiveTz) / 1000,
     );
   }, [
+    formData.openMode,
     formData.closeMode,
     formData.presetSeconds,
     formData.customDatetime,
     effectiveTz,
+    openTimeUnix,
     tick,
   ]);
+
+  const openDisplay = useMemo<string | null>(() => {
+    if (formData.openMode === "immediate") return "Immediately (when tx mines)";
+    if (openTimeUnix === null) return null;
+    try {
+      return (
+        new Intl.DateTimeFormat("en-US", {
+          timeZone: openTz,
+          dateStyle: "medium",
+          timeStyle: "short",
+        }).format(new Date(openTimeUnix * 1000)) + ` (${openTzAbbr})`
+      );
+    } catch {
+      return new Date(openTimeUnix * 1000).toLocaleString();
+    }
+  }, [formData.openMode, openTimeUnix, openTz, openTzAbbr]);
 
   const closeDisplay = useMemo<string | null>(() => {
     if (closeTimeUnix === null) return null;
@@ -189,6 +237,26 @@ export function PriceMarketWizard({
     }
   }, [closeTimeUnix, effectiveTz, tzAbbr]);
 
+  // UTC-normalised close-time string for the auto-generated title and
+  // description. The on-chain market name is permanent and shown to traders
+  // across timezones, so we anchor it to UTC instead of the creator's local
+  // clock. The interactive `closeDisplay` above continues to use the picker's
+  // chosen timezone — that's only a preview for the creator.
+  const closeDisplayUtc = useMemo<string | null>(() => {
+    if (closeTimeUnix === null) return null;
+    try {
+      return (
+        new Intl.DateTimeFormat("en-US", {
+          timeZone: "UTC",
+          dateStyle: "medium",
+          timeStyle: "short",
+        }).format(new Date(closeTimeUnix * 1000)) + " (UTC)"
+      );
+    } catch {
+      return new Date(closeTimeUnix * 1000).toUTCString();
+    }
+  }, [closeTimeUnix]);
+
   const outcomes = useMemo<[string, string]>(
     () => (formData.useStrikePrice ? ["Above", "Below"] : ["Up", "Down"]),
     [formData.useStrikePrice],
@@ -204,8 +272,8 @@ export function PriceMarketWizard({
     ) {
       return `${symbol} Above/Below $${Number(formData.strikePrice).toLocaleString()}`;
     }
-    if (closeDisplay) {
-      return `${symbol} Up/Down by ${closeDisplay}`;
+    if (closeDisplayUtc) {
+      return `${symbol} Up/Down by ${closeDisplayUtc}`;
     }
 
     return "";
@@ -213,7 +281,7 @@ export function PriceMarketWizard({
     formData.feedSymbol,
     formData.useStrikePrice,
     formData.strikePrice,
-    closeDisplay,
+    closeDisplayUtc,
   ]);
 
   const autoDescription = useMemo(() => {
@@ -222,12 +290,12 @@ export function PriceMarketWizard({
     if (
       formData.useStrikePrice &&
       Number(formData.strikePrice) > 0 &&
-      closeDisplay
+      closeDisplayUtc
     ) {
-      return `Resolves Above if Pyth ${symbol} ≥ $${Number(formData.strikePrice).toLocaleString()} at ${closeDisplay}, otherwise Below.`;
+      return `Resolves Above if Pyth ${symbol} ≥ $${Number(formData.strikePrice).toLocaleString()} at ${closeDisplayUtc}, otherwise Below.`;
     }
-    if (closeDisplay) {
-      return `Resolves Up if Pyth ${symbol} closes higher than at creation by ${closeDisplay}, otherwise Down.`;
+    if (closeDisplayUtc) {
+      return `Resolves Up if Pyth ${symbol} closes higher than at creation by ${closeDisplayUtc}, otherwise Down.`;
     }
 
     return "";
@@ -235,15 +303,15 @@ export function PriceMarketWizard({
     formData.feedSymbol,
     formData.useStrikePrice,
     formData.strikePrice,
-    closeDisplay,
+    closeDisplayUtc,
   ]);
 
   const stepIndex = PRICE_WIZARD_STEPS.findIndex((s) => s.id === currentStep);
   const totalSteps = PRICE_WIZARD_STEPS.length;
   const stepInfo = PRICE_WIZARD_STEPS[stepIndex];
   const valid = useMemo(
-    () => isStepValid(currentStep, formData, closeTimeUnix),
-    [currentStep, formData, closeTimeUnix],
+    () => isStepValid(currentStep, formData, openTimeUnix, closeTimeUnix),
+    [currentStep, formData, openTimeUnix, closeTimeUnix],
   );
 
   const goNext = useCallback(() => {
@@ -260,11 +328,19 @@ export function PriceMarketWizard({
 
   const submit = useCallback(() => {
     if (!address || closeTimeUnix === null) return;
+    // Immediate markets send openTime=0 (contract sets it to block.timestamp).
+    // Scheduled markets send the user-picked unix time.
+    const openTimeUnixToSend =
+      formData.openMode === "immediate" ? 0 : openTimeUnix;
+
+    if (formData.openMode === "scheduled" && openTimeUnixToSend === null)
+      return;
     setHasCompleted(true);
     setFlowOpen(true);
     creation.createPriceMarket(
       formData,
       {
+        openTimeUnix: openTimeUnixToSend ?? 0,
         closeTimeUnix,
         outcomes,
         title: formData.title.trim() || autoTitle,
@@ -279,6 +355,7 @@ export function PriceMarketWizard({
     closeTimeUnix,
     creation,
     formData,
+    openTimeUnix,
     outcomes,
   ]);
 
@@ -319,7 +396,9 @@ export function PriceMarketWizard({
         canGoNext={valid}
         invalidHint={
           currentStep === "window"
-            ? "Close time must be at least 5 minutes from now"
+            ? formData.openMode === "scheduled" && !formData.openDatetime
+              ? "Pick a future open time"
+              : "Close time must be strictly after the open time"
             : "Complete required fields to continue"
         }
         isLastStep={stepIndex === totalSteps - 1}
@@ -351,6 +430,7 @@ export function PriceMarketWizard({
             closeDisplay={closeDisplay}
             creationFee={creationFee}
             formData={formData}
+            openDisplay={openDisplay}
             outcomes={outcomes}
             resolvedDescription={formData.description.trim() || autoDescription}
             resolvedTitle={formData.title.trim() || autoTitle}

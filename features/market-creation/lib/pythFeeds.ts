@@ -28,7 +28,17 @@ export const PYTH_FEEDS: PythFeed[] = [
 
 export const PYTH_FEED_MAP = new Map(PYTH_FEEDS.map((f) => [f.id, f]));
 
+/**
+ * Trading-window presets, measured from the market's effective open time:
+ * - For immediate markets, "5m" means "closes 5 minutes after tx mines".
+ * - For scheduled markets, "5m" means "closes 5 minutes after openTime".
+ *
+ * The protocol enforces only `closeTime > effectiveOpenTime`; this list is a
+ * UX convenience.
+ */
 export const PYTH_DURATION_PRESETS: { label: string; seconds: number }[] = [
+  { label: "1m", seconds: 60 },
+  { label: "2m", seconds: 120 },
   { label: "5m", seconds: 300 },
   { label: "15m", seconds: 900 },
   { label: "30m", seconds: 1800 },

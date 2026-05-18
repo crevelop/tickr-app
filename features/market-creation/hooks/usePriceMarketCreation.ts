@@ -44,6 +44,12 @@ async function validatePythFeedId(feedId: string): Promise<void> {
 }
 
 export interface PriceMarketSubmission {
+  /**
+   * Unix seconds. `0` means "immediate" — the contract resolves it to
+   * `block.timestamp` at tx-mine time. > 0 schedules the market to open at
+   * that exact instant; must be strictly in the future when the tx lands.
+   */
+  openTimeUnix: number;
   closeTimeUnix: number;
   outcomes: [string, string];
   title: string;
@@ -134,12 +140,32 @@ export function usePriceMarketCreation(
         execute: async () => {
           await waitForRPCSync();
 
-          const closeTime =
-            formData.closeMode === "preset"
-              ? Math.floor(Date.now() / 1000) +
-                formData.presetSeconds +
-                TX_MINING_BUFFER_SECONDS
-              : submission.closeTimeUnix;
+          // openTime > 0 means "scheduled" — pass through verbatim. The
+          // contract requires openTime > block.timestamp at mine time, so
+          // we add no buffer here; the wizard's MIN_SCHEDULED_LEAD_SECONDS
+          // validates user input is far enough in the future.
+          //
+          // openTime == 0 means "immediate" — the contract sets it to
+          // block.timestamp, so closeTime only needs a small buffer to
+          // outlast tx mining.
+          const isScheduled =
+            formData.openMode === "scheduled" && submission.openTimeUnix > 0;
+          const openTime = isScheduled
+            ? BigInt(submission.openTimeUnix)
+            : BigInt(0);
+
+          let closeTime: number;
+
+          if (isScheduled) {
+            closeTime = submission.closeTimeUnix;
+          } else if (formData.closeMode === "preset") {
+            closeTime =
+              Math.floor(Date.now() / 1000) +
+              formData.presetSeconds +
+              TX_MINING_BUFFER_SECONDS;
+          } else {
+            closeTime = submission.closeTimeUnix;
+          }
 
           const strikePrice = formData.useStrikePrice
             ? BigInt(
@@ -154,6 +180,7 @@ export function usePriceMarketCreation(
             venueId,
             pythFeedId: formData.pythFeedId as `0x${string}`,
             strikePrice,
+            openTime,
             closeTime: BigInt(closeTime),
             outcomes: submission.outcomes,
             tickSize: parseEther(formData.tickSize),
