@@ -1,7 +1,7 @@
 {
-  "name": "octopus-venue-app",
+  "name": "oddmaki-venue-starter",
   "version": "0.1.0",
-  "description": "White-label prediction market starter app for the Octopus Protocol",
+  "description": "White-label prediction market app for the OddMaki Protocol",
   "private": true,
   "author": "Predictable Reality, Inc.",
   "contributors": [
