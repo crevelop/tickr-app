@@ -109,16 +109,20 @@ export const queryKeys = {
 
   trader: {
     all: ["trader"] as const,
-    profile: (address: string) => ["trader", "profile", address] as const,
-    positions: (address: string) => ["trader", "positions", address] as const,
-    closedPositions: (address: string) =>
-      ["trader", "closedPositions", address] as const,
-    trades: (address: string) => ["trader", "trades", address] as const,
+    profile: (address: string, venueId?: string) =>
+      ["trader", "profile", address, venueId] as const,
+    positions: (address: string, venueId?: string) =>
+      ["trader", "positions", address, venueId] as const,
+    closedPositions: (address: string, venueId?: string) =>
+      ["trader", "closedPositions", address, venueId] as const,
+    trades: (address: string, venueId?: string) =>
+      ["trader", "trades", address, venueId] as const,
   },
 
   leaderboard: {
     all: ["leaderboard"] as const,
-    global: (sortBy: string) => ["leaderboard", "global", sortBy] as const,
+    venue: (venueId: string | undefined, sortBy: string) =>
+      ["leaderboard", "venue", venueId, sortBy] as const,
   },
 
   marketHolders: {

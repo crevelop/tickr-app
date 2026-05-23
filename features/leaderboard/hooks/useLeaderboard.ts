@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useOddMakiClient } from "@/lib/oddmaki/hooks";
 import { queryKeys } from "@/lib/oddmaki/queryKeys";
+import { getVenueId } from "@/config/venue.config";
 
 export type LeaderboardSortField =
   | "totalVolume"
@@ -15,18 +16,21 @@ export function useLeaderboard(
   first: number = 50,
 ) {
   const client = useOddMakiClient();
+  const venueId = getVenueId();
 
   return useQuery({
-    queryKey: queryKeys.leaderboard.global(orderBy),
+    queryKey: queryKeys.leaderboard.venue(venueId?.toString(), orderBy),
     queryFn: async () => {
-      const result = await client.public.getLeaderboard({
+      const result = await client.public.getVenueLeaderboard({
+        venueId: venueId!,
         orderBy,
         orderDirection: "desc",
         first,
       });
 
-      return result.users ?? [];
+      return result.userVenueStats ?? [];
     },
+    enabled: venueId !== undefined,
     staleTime: 30_000,
     refetchInterval: 60_000,
   });

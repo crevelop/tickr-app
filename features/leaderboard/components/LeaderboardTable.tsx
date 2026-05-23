@@ -75,6 +75,7 @@ export function LeaderboardTable({ users, isLoading }: LeaderboardTableProps) {
                     : pnlValue < 0
                       ? "text-danger"
                       : "";
+                const traderAddress = user.trader?.id ?? user.id;
 
                 return (
                   <tr
@@ -87,15 +88,15 @@ export function LeaderboardTable({ users, isLoading }: LeaderboardTableProps) {
                     <td className="p-4">
                       <NextLink
                         className="flex items-center gap-3 hover:text-primary transition-colors"
-                        href={`/trader/${user.id}`}
+                        href={`/trader/${traderAddress}`}
                       >
-                        <AddressAvatar address={user.id} size={32} />
+                        <AddressAvatar address={traderAddress} size={32} />
                         <div className="flex flex-col">
                           <span className="font-medium">
-                            {generatePseudonym(user.id)}
+                            {generatePseudonym(traderAddress)}
                           </span>
                           <span className="text-xs text-default-400">
-                            {shortenAddress(user.id)}
+                            {shortenAddress(traderAddress)}
                           </span>
                         </div>
                       </NextLink>
@@ -125,24 +126,25 @@ export function LeaderboardTable({ users, isLoading }: LeaderboardTableProps) {
             const pnlValue = parseFloat(user.totalRealizedPnL || "0");
             const pnlColor =
               pnlValue > 0 ? "text-success" : pnlValue < 0 ? "text-danger" : "";
+            const traderAddress = user.trader?.id ?? user.id;
 
             return (
               <NextLink
                 key={user.id}
                 className="flex flex-col gap-2 p-3 border-b border-default-100 last:border-0 hover:bg-default-50 transition-colors"
-                href={`/trader/${user.id}`}
+                href={`/trader/${traderAddress}`}
               >
                 <div className="flex items-center gap-3">
                   <span className="text-default-500 font-medium w-6 text-center">
                     {index + 1}
                   </span>
-                  <AddressAvatar address={user.id} size={28} />
+                  <AddressAvatar address={traderAddress} size={28} />
                   <div className="flex flex-col min-w-0 flex-1">
                     <span className="font-medium truncate">
-                      {generatePseudonym(user.id)}
+                      {generatePseudonym(traderAddress)}
                     </span>
                     <span className="text-xs text-default-400 truncate">
-                      {shortenAddress(user.id)}
+                      {shortenAddress(traderAddress)}
                     </span>
                   </div>
                   <div className={`text-right font-semibold ${pnlColor}`}>

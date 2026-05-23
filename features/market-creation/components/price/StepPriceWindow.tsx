@@ -312,7 +312,9 @@ export function StepPriceWindow({
           }}
         >
           Preset durations are measured from{" "}
-          {formData.openMode === "scheduled" ? "the scheduled open time" : "now"}
+          {formData.openMode === "scheduled"
+            ? "the scheduled open time"
+            : "now"}
           . Custom lets you pick an absolute close timestamp.
         </div>
         <div
