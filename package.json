@@ -1,7 +1,7 @@
 {
-  "name": "oddmaki-venue-starter",
+  "name": "tickr-app",
   "version": "0.1.0",
-  "description": "White-label prediction market app for the OddMaki Protocol",
+  "description": "Tickr venue app",
   "private": true,
   "author": "Predictable Reality, Inc.",
   "contributors": [

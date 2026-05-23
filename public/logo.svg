@@ -1,8 +1,4 @@
-<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
-  <title>OddMaki</title>
-  <g stroke="#00F0FF" stroke-width="3" fill="none">
-    <circle cx="64" cy="64" r="60"/>
-    <circle cx="64" cy="64" r="40"/>
-  </g>
-  <circle cx="64" cy="64" r="32" fill="#FF00E5"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <path d="M 24 80 L 52 100 L 104 28" fill="none" stroke="#FFB800" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="104" cy="28" r="9" fill="#FFB800"/>
 </svg>
